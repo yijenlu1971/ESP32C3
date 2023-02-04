@@ -316,5 +316,26 @@ namespace BluetoothLE
             }
             return data;
         }
+        public static double[] MsgToDouble(String msg)
+        {
+            double[] pidVal = new double[10];
+            int i = 0;
+
+            while (true)
+            {
+                int indx = msg.IndexOf(',');
+                if (indx == -1)
+                {
+                    pidVal[i++] = Convert.ToDouble(msg);
+                    break;
+                }
+                else
+                {
+                    pidVal[i++] = Convert.ToDouble(msg.Substring(0, indx));
+                    msg = msg.Substring(indx + 1);
+                }
+            }
+            return pidVal;
+        }
     }
 }

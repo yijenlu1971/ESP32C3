@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
+using Windows.Storage.Streams;
 
 namespace BluetoothLE
 {
@@ -17,14 +20,16 @@ namespace BluetoothLE
         private List<BLEDevice> UnknownDevices = new List<BLEDevice>();
         private bool bScan = false;
         private delegate void SafeAddBleList(ulong addr, string name);
+        private delegate void SafeSetPidVal(double[] val);
 
         private BluetoothLEDevice btLeDevice = null;
         private List<GattDeviceService> DevServices = new List<GattDeviceService>();
         private List<GattCharacteristic> ServCharact = new List<GattCharacteristic>();
+        private GattCharacteristic registeredCharacteristic;
         public Form1()
         {
             InitializeComponent();
-            ConnBtn.Enabled = ServiceBtn.Enabled = false;
+            ConnBtn.Enabled = false;
         }
 
         // Add BLE devices to list
@@ -72,23 +77,18 @@ namespace BluetoothLE
                 for (int i = 0; i < eventArgs.Advertisement.DataSections.Count; i++)
                 {
                     var data = eventArgs.Advertisement.DataSections[i];
-                    using (var dataReader = Windows.Storage.Streams.DataReader.FromBuffer(data.Data))
+                    byte[] byteArray = Utilities.ReadBufferToBytes(data.Data);
+                    if (data.DataType == BluetoothLEAdvertisementDataTypes.CompleteLocalName)
                     {
-                        byte[] byteArray = new byte[data.Data.Length];
-                        dataReader.UnicodeEncoding = Windows.Storage.Streams.UnicodeEncoding.Utf8;
-                        dataReader.ReadBytes(byteArray);
-                        if (data.DataType == BluetoothLEAdvertisementDataTypes.CompleteLocalName)
-                        {
-                            string str = Encoding.Default.GetString(byteArray);
-                            Console.WriteLine(String.Format("[{0}]DATA: {1}", i, str));
-                            devInfo.DevName = str;
-                        }
-                        else
-                        {
-                            Console.Write(String.Format("[{0}]DATA: ", i));
-                            foreach (byte val in byteArray) Console.Write(String.Format("{0:X2}", val));
-                            Console.WriteLine();
-                        }
+                        string str = Encoding.Default.GetString(byteArray);
+                        Console.WriteLine(String.Format("[{0}]DATA: {1}", i, str));
+                        devInfo.DevName = str;
+                    }
+                    else
+                    {
+                        String msg = String.Format("[{0}]DATA: ", i);
+                        foreach (byte val in byteArray) msg += String.Format("{0:X2}", val);
+                        Console.WriteLine(msg);
                     }
                     Console.WriteLine(String.Format("[{0}]TYPE: {1}", i, data.DataType));
                 }
@@ -120,7 +120,8 @@ namespace BluetoothLE
                 ServiceList.Items.Clear();
                 CharList.Items.Clear();
                 DescList.Items.Clear();
-                ConnBtn.Enabled = ServiceBtn.Enabled = false;
+                ConnBtn.Enabled = NotifyBtn.Enabled = ReadBtn.Enabled = WriteBtn.Enabled = false;
+                ReadText.Text = "";
                 ConnBtn.Text = "連線BLE";
 
                 btLeDevice?.Dispose();
@@ -154,7 +155,10 @@ namespace BluetoothLE
         {
             ConnBtn.Enabled = (ResultList.SelectedIndex != -1) ? true : false;
         }
-
+        private void OnBleConnectionStatusChanged(BluetoothLEDevice sender, object args)
+        {
+            Console.WriteLine("連線狀態:{0}", sender.ConnectionStatus);
+        }
         private async void ConnBtn_Click(object sender, EventArgs e)
         {
             ConnBtn.Enabled = false;
@@ -167,10 +171,27 @@ namespace BluetoothLE
 
             if (btLeDevice != null)
             {
+                if (CharList.SelectedIndex != -1)
+                {
+                    GattCharacteristic selCharacteristic = ServCharact[CharList.SelectedIndex];
+                    var desc = await selCharacteristic.GetDescriptorsAsync();
+                    foreach (GattDescriptor d in desc.Descriptors)
+                    {
+                    }
+                }
+
+                var services = await btLeDevice.GetGattServicesAsync();
+                foreach (var serv in services.Services)
+                {
+                    serv?.Session?.Dispose();
+                    serv?.Dispose();
+                }
+
+                btLeDevice.ConnectionStatusChanged -= OnBleConnectionStatusChanged;
                 btLeDevice.Dispose();
                 btLeDevice = null;
+
                 ConnBtn.Text = "連線BLE";
-                ServiceBtn.Enabled = false;
             }
             else
             {
@@ -181,47 +202,45 @@ namespace BluetoothLE
 
                     if (btLeDevice != null)
                     {
+                        btLeDevice.ConnectionStatusChanged += OnBleConnectionStatusChanged;
+                        ConnBtn.Text = "連線中";
+                        Thread.Sleep(500);
+
+                        int count = 0;
+                        ServiceList.Items.Clear();
+                        while (count++ < 5)
+                        {
+                            // Note: BluetoothLEDevice.GattServices property will return an empty list for unpaired devices. For all uses we recommend using the GetGattServicesAsync method.
+                            // BT_Code: GetGattServicesAsync returns a list of all the supported services of the device (even if it's not paired to the system).
+                            // If the services supported by the device are expected to change during BT usage, subscribe to the GattServicesChanged event.
+                            GattDeviceServicesResult result = await btLeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached);
+
+                            if (result.Status == GattCommunicationStatus.Success)
+                            {
+                                DevServices.Clear();
+                                Console.WriteLine(String.Format("Found {0} services", result.Services.Count));
+                                foreach (GattDeviceService service in result.Services)
+                                {
+                                    DevServices.Add(service);
+                                    ServiceList.Items.Add(DisplayHelpers.GetServiceName(service));
+                                    //Console.WriteLine(String.Format("UUID: {0:X}", service.Uuid.ToString()));
+                                }
+
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine("GattServices {0}", result.Status);
+                                Console.WriteLine("Try to get services {0} times", count);
+                            }
+                        }
+
                         ConnBtn.Text = "斷線BLE";
-                        ServiceBtn.Enabled = true;
-                        Console.WriteLine("連線狀態:{0}", btLeDevice.ConnectionStatus);
                     }
                 }
                 catch (Exception ex) { Console.WriteLine("BLE_Service exception: ", ex.Message); }
             }
             ConnBtn.Enabled = true;
-        }
-
-        private async void ServiceBtn_Click(object sender, EventArgs e)
-        {
-            if (btLeDevice != null)
-            {
-                ServiceBtn.Enabled = false;
-                ServiceList.Items.Clear();
-                // Note: BluetoothLEDevice.GattServices property will return an empty list for unpaired devices. For all uses we recommend using the GetGattServicesAsync method.
-                // BT_Code: GetGattServicesAsync returns a list of all the supported services of the device (even if it's not paired to the system).
-                // If the services supported by the device are expected to change during BT usage, subscribe to the GattServicesChanged event.
-                GattDeviceServicesResult result = await btLeDevice.GetGattServicesAsync(BluetoothCacheMode.Uncached);
-
-                if (result.Status == GattCommunicationStatus.Success)
-                {
-                    DevServices.Clear();
-                    var services = result.Services;
-                    Console.WriteLine(String.Format("Found {0} services", services.Count));
-                    foreach (var service in services)
-                    {
-                        DevServices.Add(service);
-                        ServiceList.Items.Add(DisplayHelpers.GetServiceName(service));
-                        Console.WriteLine(String.Format("UUID: {0:X}", service.Uuid.ToString()));
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Device unreachable");
-                }
-
-                Console.WriteLine("連線狀態:{0}", btLeDevice.ConnectionStatus);
-                ServiceBtn.Enabled = true;
-            }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -233,7 +252,6 @@ namespace BluetoothLE
         private async void ServiceList_SelectedIndexChanged(object sender, EventArgs e)
         {
             var service = DevServices[ServiceList.SelectedIndex];
-            IReadOnlyList<GattCharacteristic> characteristics = null;
 
             try
             {
@@ -247,13 +265,15 @@ namespace BluetoothLE
                     {
                         CharList.Items.Clear();
                         ServCharact.Clear();
-                        characteristics = result.Characteristics;
-                        foreach (GattCharacteristic c in characteristics)
+                        NotifyBtn.Enabled = ReadBtn.Enabled = WriteBtn.Enabled = false;
+                        ReadText.Text = "";
+
+                        foreach (GattCharacteristic c in result.Characteristics)
                         {
                             ServCharact.Add(c);
                             DescList.Items.Clear();
                             CharList.Items.Add(DisplayHelpers.GetCharacteristicName(c));
-                            Console.WriteLine("Charact:{0}", DisplayHelpers.GetCharacteristicName(c));
+//                            Console.WriteLine("Charact:{0}", DisplayHelpers.GetCharacteristicName(c));
                         }
                     }
                     else
@@ -273,6 +293,7 @@ namespace BluetoothLE
         {
             GattCharacteristic selectedCharacteristic = ServCharact[CharList.SelectedIndex];
             DescList.Items.Clear();
+            NotifyBtn.Enabled = ReadBtn.Enabled = WriteBtn.Enabled = false;
 
             // Get all the child descriptors of a characteristics. Use the cache mode to specify uncached descriptors only 
             // and the new Async functions to get the descriptors of unpaired devices as well. 
@@ -283,8 +304,150 @@ namespace BluetoothLE
             }
             else
             {
+                NotifyBtn.Enabled = ((selectedCharacteristic.CharacteristicProperties & GattCharacteristicProperties.Notify) ==
+                    GattCharacteristicProperties.Notify);
+                ReadBtn.Enabled = ((selectedCharacteristic.CharacteristicProperties & GattCharacteristicProperties.Read) ==
+                    GattCharacteristicProperties.Read);
+                WriteBtn.Enabled = ((selectedCharacteristic.CharacteristicProperties & GattCharacteristicProperties.Write) ==
+                    GattCharacteristicProperties.Write);
+
                 DescList.Items.Add(String.Format("Property: {0}", selectedCharacteristic.CharacteristicProperties));
                 Console.WriteLine("Property: {0}", selectedCharacteristic.CharacteristicProperties);
+            }
+        }
+
+        private bool subscribedForNotifications = false;
+        private async void NotifyBtn_Click(object sender, EventArgs e)
+        {
+            string caption = "訂閱 BLE 通知訊息";
+            string msg = "";
+            GattCharacteristic selectedCharacteristic = ServCharact[CharList.SelectedIndex];
+            if (!subscribedForNotifications)
+            {
+                // initialize status
+                GattCommunicationStatus status = GattCommunicationStatus.Unreachable;
+                var cccdValue = GattClientCharacteristicConfigurationDescriptorValue.None;
+                if (selectedCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Indicate))
+                {
+                    cccdValue = GattClientCharacteristicConfigurationDescriptorValue.Indicate;
+                }
+                else if (selectedCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Notify))
+                {
+                    cccdValue = GattClientCharacteristicConfigurationDescriptorValue.Notify;
+                }
+
+                try
+                {
+                    // BT_Code: Must write the CCCD in order for server to send indications.
+                    // We receive them in the ValueChanged event handler.
+                    status = await selectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(cccdValue);
+
+                    if (status == GattCommunicationStatus.Success)
+                    {
+                        registeredCharacteristic = selectedCharacteristic;
+                        registeredCharacteristic.ValueChanged += Characteristic_ValueChanged;
+                        subscribedForNotifications = true;
+                        msg = "訂閱通知成功";
+                        MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (UnauthorizedAccessException ex) { Console.WriteLine("NotifyBtn exception:" + ex.Message); }
+            }
+            else
+            {
+                try
+                {
+                    // BT_Code: Must write the CCCD in order for server to send notifications.
+                    // We receive them in the ValueChanged event handler.
+                    // Note that this sample configures either Indicate or Notify, but not both.
+                    var result = await selectedCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                GattClientCharacteristicConfigurationDescriptorValue.None);
+                    if (result == GattCommunicationStatus.Success)
+                    {
+                        subscribedForNotifications = false;
+                        registeredCharacteristic.ValueChanged -= Characteristic_ValueChanged;
+                        registeredCharacteristic = null;
+                        msg = "取消通知";
+                        MessageBox.Show(msg, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch (UnauthorizedAccessException ex) { Console.WriteLine("NotifyBtn exception:" + ex.Message); }
+            }
+        }
+        private void SetPidValue(double[] pidVal)
+        {
+            if (this.InvokeRequired)
+            {
+                var d = new SafeSetPidVal(SetPidValue);
+                this.Invoke(d, new object[] { pidVal });
+            }
+            else
+            {
+                angleText.Text = pidVal[0].ToString(); spdText.Text = pidVal[1].ToString();
+                kpaText.Text = pidVal[2].ToString(); kiaText.Text = pidVal[3].ToString(); kdaText.Text = pidVal[4].ToString();
+                kpsText.Text = pidVal[5].ToString(); kisText.Text = pidVal[6].ToString(); kdsText.Text = pidVal[7].ToString();
+            }
+        }
+        private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+        {
+            // 接收通訊的資料, 然後解析資料格式
+            String msg = "";
+            byte[] byteArray = Utilities.ReadBufferToBytes(args.CharacteristicValue);
+            float[] kpid = new float[10];
+
+            if (checkRHex.Checked == false)
+            {
+                msg = Encoding.Default.GetString(byteArray);
+                double[] pidVal = Utilities.MsgToDouble(msg);
+                SetPidValue(pidVal);
+            }
+            else
+            {
+                foreach (byte val in byteArray) msg += String.Format("{0:X2} ", val);
+                Console.WriteLine(msg);
+            }
+        }
+
+        private async void ReadBtn_Click(object sender, EventArgs e)
+        {
+            GattCharacteristic selectedCharacteristic = ServCharact[CharList.SelectedIndex];
+            GattReadResult result = await selectedCharacteristic.ReadValueAsync(BluetoothCacheMode.Uncached);
+            if (result.Status == GattCommunicationStatus.Success)
+            {
+                String msg = "";
+                byte[] byteArray = Utilities.ReadBufferToBytes(result.Value);
+
+                if (checkRHex.Checked == false)
+                {
+                    msg = Encoding.Default.GetString(byteArray);
+                    double[] pidVal = Utilities.MsgToDouble(msg);
+                    SetPidValue(pidVal);
+
+                    WriteText.Text = String.Format("{0}, {1}, {2}, {3}, {4}, {5}",
+                            kpaText.Text, kiaText.Text, kdaText.Text,
+                            kpsText.Text, kisText.Text, kdsText.Text);
+                }
+                else
+                {
+                    foreach (byte val in byteArray) msg += String.Format("{0:X2} ", val);
+                    ReadText.Text = msg;
+                }
+            }
+            else
+            {
+                Console.Write("Read failed: {0}", result.Status);
+            }
+        }
+
+        private async void WriteBtn_Click(object sender, EventArgs e)
+        {
+            GattCharacteristic selectedCharacteristic = ServCharact[CharList.SelectedIndex];
+            DataWriter dataBuf = new DataWriter();
+            dataBuf.WriteString(WriteText.Text);
+            GattWriteResult result = await selectedCharacteristic.WriteValueWithResultAsync(dataBuf.DetachBuffer());
+            if (result.Status != GattCommunicationStatus.Success)
+            {
+                Console.Write("Write failed: {0}", result.Status);
             }
         }
     }

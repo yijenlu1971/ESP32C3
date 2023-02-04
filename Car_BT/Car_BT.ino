@@ -1,9 +1,12 @@
 #include <Arduino.h>
 #include <Wire.h>
+
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
+#include <BLE2902.h>
 
+#include <Adafruit_NeoPixel.h>
 
 #ifdef __U8G2__
 #include <U8g2lib.h>
@@ -15,9 +18,19 @@ U8G2_SSD1306_72X40_ER_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);   // Ea
 #define CHARACTERISTIC_UUID   "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
 BLEServer *pServer = NULL;
+BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
+int rxLen = 0;
+char rxBuf[128] = {0};
 
+// Which pin on is connected to the NeoPixels?
+#define LED_PIN    2
+// How many NeoPixels are attached?
+#define LED_COUNT  1
+// NeoPixel brightness, 0 (min) to 255 (max)
+#define BRIGHTNESS 50 // Set BRIGHTNESS to about 1/5 (max = 255)
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 #define SDA_PIN 	5
 #define SCL_PIN 	6
@@ -67,8 +80,8 @@ float PCt_0, PCt_1, E;
 
 //////////////////////PID参数///////////////////////////////
 double kp = 34, ki = 0, kd = 0.62;                      //角度环参数
-double kp_speed = 3.6, ki_speed = 0.080, kd_speed = 0;  //速度环参数
-double setp0 = 0; //角度平衡点
+double kp_speed = 3.6, ki_speed = 0.08, kd_speed = 0;  //速度环参数
+double step0 = 0; //速度平衡点
 int PD_pwm;  //角度输出
 float pwm1 = 0, pwm2 = 0;
 
@@ -94,12 +107,12 @@ float speeds_filter;
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
-      Serial.println("onConnect");
+      //Serial.println("onConnect");
     };
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
-      Serial.println("onDisconnect");
+      //Serial.println("onDisconnect");
     }
 };
 
@@ -107,21 +120,20 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
       std::string rxValue = pCharacteristic->getValue();
 
-      if (rxValue.length() > 0) {
-        Serial.println("*********");
-        Serial.print("Received Value: ");
-        for (int i = 0; i < rxValue.length(); i++)
-          Serial.print(rxValue[i]);
-
-        Serial.println();
-        Serial.println("*********");
-      }
+      rxLen = rxValue.length();
+      for(int i = 0; i < rxValue.length(); i++) rxBuf[i] = rxValue[i];
+      rxBuf[rxLen] = 0;
     }
 };
 
 void setup() 
 {
   Serial.begin(115200);
+
+  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.show();            // Turn OFF all pixels ASAP
+  strip.setBrightness(BRIGHTNESS);
+  colorWipe(strip.Color(255,   0,   0)     , 50); // Red
 
   //设置控制电机的引脚为输出状态
   pinMode(right_R1, OUTPUT);
@@ -152,13 +164,16 @@ void setup()
   pServer->setCallbacks(new MyServerCallbacks());
 
   BLEService *pService = pServer->createService(SERVICE_UUID);
-  BLECharacteristic *pCharacteristic = pService->createCharacteristic(
-                                         CHARACTERISTIC_UUID,
-                                         BLECharacteristic::PROPERTY_READ |
-                                         BLECharacteristic::PROPERTY_WRITE
-                                       );
+  pCharacteristic = pService->createCharacteristic(
+                            CHARACTERISTIC_UUID,
+                            BLECharacteristic::PROPERTY_READ |
+                            BLECharacteristic::PROPERTY_WRITE  |
+                            BLECharacteristic::PROPERTY_NOTIFY
+                            );
 
-  pCharacteristic->setValue("Hello World says Neil");
+  // Create a BLE Descriptor
+  pCharacteristic->addDescriptor(new BLE2902());
+  pCharacteristic->setCallbacks(new MyCallbacks());
   pService->start();
 
   BLEAdvertisementData advData;
@@ -197,9 +212,8 @@ void setup()
 }
 
 void loop() {
-#ifdef __U8G2__
-  char buf[128];
-#endif
+  char buf[128], len;
+
   MPU6050_getMotion6(&ax, &ay, &az, &gx, &gy, &gz); // I2C 不能放到中斷裡面執行
 
   if( ++tmrCnt >= 250 ) {
@@ -216,16 +230,29 @@ void loop() {
     u8g2.drawStr(0, 20, buf);
     u8g2.sendBuffer();        // transfer internal memory to the display
 #endif
-  }
-
-  if( ++btCnt >= 10 ) {
-    btCnt = 0;
 
     if (deviceConnected) {
+      len = sprintf(buf, "%7.2f,%7.2f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f,%5.2f", 
+            angle, speeds_filter, kp, ki, kd, kp_speed, ki_speed, kd_speed);
+      pCharacteristic->setValue((uint8_t*)buf, len);
+      pCharacteristic->notify();
+      
+      if( rxLen > 0 )
+      {
+        rxLen = 0;
+        Serial.println(rxBuf);
+        sscanf((const char *)rxBuf, "%lf, %lf, %lf, %lf, %lf, %lf", 
+            &kp, &ki, &kd, &kp_speed, &ki_speed, &kd_speed);
+      }
     }
+  }
+
+  if( ++btCnt >= 25 ) {
+    btCnt = 0;
 
     // disconnecting
     if (!deviceConnected && oldDeviceConnected) {
+      colorWipe(strip.Color(255,   0,   0)     , 50); // Red
       Serial.println("start advertising");
       oldDeviceConnected = deviceConnected;
       pServer->startAdvertising(); // restart advertising
@@ -234,6 +261,7 @@ void loop() {
     // connecting
     if (deviceConnected && !oldDeviceConnected) {
       // do stuff here on connecting
+      colorWipe(strip.Color(  0, 255,   0)     , 50); // Green
       oldDeviceConnected = deviceConnected;
     }
   }
@@ -361,7 +389,7 @@ void Kalman_Filter(double angle_m, double gyro_m)
 //////////////////角度PD////////////////////
 void PD()
 {
-  PD_pwm = kp * (angle + angle0) + kd * angle_speed; //PD 角度环控制
+  PD_pwm = kp*(angle + angle0) + kd*angle_speed; //PD 角度环控制
 }
 
 //////////////////速度PI////////////////////
@@ -374,7 +402,7 @@ void speedpiout()
   speeds_filterold = speeds_filter;
   positions += speeds_filter;
   positions = constrain(positions, -3550, 3550);  //抗积分饱和
-  PI_pwm = ki_speed * (setp0 - positions) + kp_speed * (setp0 - speeds_filter);	//速度环控制 PI
+  PI_pwm = ki_speed*(step0 - positions) - kp_speed*speeds_filter;	//速度环控制 PI
 }
 //////////////////速度PI////////////////////
 
@@ -476,4 +504,17 @@ void MPU6050_getMotion6(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int1
   *gx = gyroX; *gy = gyroY; *gz = gyroZ;
   portEXIT_CRITICAL_ISR(&timerMux);
   len = len;
+}
+
+// Fill strip pixels one after another with a color. Strip is NOT cleared
+// first; anything there will be covered pixel by pixel. Pass in color
+// (as a single 'packed' 32-bit value, which you can get by calling
+// strip.Color(red, green, blue) as shown in the loop() function above),
+// and a delay time (in milliseconds) between pixels.
+void colorWipe(uint32_t color, int wait) {
+  for(int i=0; i<strip.numPixels(); i++) { // For each pixel in strip...
+    strip.setPixelColor(i, color);         //  Set pixel's color (in RAM)
+    strip.show();                          //  Update strip to match
+    delay(wait);                           //  Pause for a moment
+  }
 }
