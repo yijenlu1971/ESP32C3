@@ -9,6 +9,7 @@
 #include "main.h"
 #include "dcmi_ov2640.h"  
 
+#if 0
 #include "ei_classifier_porting.h"
 #include "ei_classifier_types.h"
 #include "ei_run_classifier.h"
@@ -17,7 +18,7 @@
 
 
 extern EI_IMPULSE_ERROR ei_sleep(int32_t time_ms);
-
+#endif
 
 /* Private variables ------------------------------------------------------- */
 static bool debug_nn = false; // Set this to true to see e.g. features generated from the raw signal
@@ -39,6 +40,7 @@ extern "C"
 	
 	void ei_edge_impulse()
 	{
+#if 0
 		// convert RGB565 to RGB888
 		for(int i = 0; i < EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT; i++)
 		{
@@ -54,7 +56,7 @@ extern "C"
 
     // Run the classifier
     ei_impulse_result_t result = { 0 };
-
+#endif
     /*EI_IMPULSE_ERROR err = run_classifier(&signal, &result, debug_nn);
     if (err != EI_IMPULSE_OK)
 		{

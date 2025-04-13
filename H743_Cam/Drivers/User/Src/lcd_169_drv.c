@@ -4,9 +4,13 @@
 
 #include "lcd_169_drv.h"
 
+#ifdef STM32H750xx
+SPI_HandleTypeDef hspi6;	      // SPI_HandleTypeDef 结构体变量
+#define  LCD_SPI	hspi6         // SPI局部宏，方便修改和移植
+#else
 SPI_HandleTypeDef hspi1;	      // SPI_HandleTypeDef 结构体变量
-
 #define  LCD_SPI hspi1           // SPI局部宏，方便修改和移植
+#endif
 
 static pFONT *LCD_AsciiFonts;		// 英文字体，ASCII字符集
 static pFONT *LCD_CHFonts;		   // 中文字体（同时也包含英文字体）
@@ -44,10 +48,17 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 {
    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
    GPIO_InitTypeDef GPIO_InitStruct = {0};
+	 
+#ifdef STM32H750xx
+   if(hspi->Instance==SPI6)
+   {
+		PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI6;
+    PeriphClkInitStruct.Spi6ClockSelection = RCC_SPI6CLKSOURCE_D3PCLK1;
+#else
    if(hspi->Instance==SPI1)
    {
-		
 		PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI1;
+    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL2;
     PeriphClkInitStruct.PLL2.PLL2M = 16;
     PeriphClkInitStruct.PLL2.PLL2N = 100;
     PeriphClkInitStruct.PLL2.PLL2P = 1;
@@ -56,11 +67,29 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0;
     PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
     PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
-    PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL2;
+#endif
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
     {
       Error_Handler();
     }
+		
+#ifdef STM32H750xx
+    __HAL_RCC_SPI6_CLK_ENABLE();
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOG_CLK_ENABLE();
+    /**SPI6 GPIO Configuration
+    PA15 (JTDI)     ------> SPI6_NSS
+    PG14     ------> SPI6_MOSI
+    PG13     ------> SPI6_SCK
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_13;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+#else
 		__HAL_RCC_SPI1_CLK_ENABLE();			// 使能SPI1时钟
 		__HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -85,7 +114,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-    
+#endif
 		
 		/*PA15 SPI1 液晶屏片选 */
 		GPIO_InitStruct.Pin =GPIO_PIN_15;
@@ -93,10 +122,17 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 		GPIO_InitStruct.Pull = GPIO_PULLUP;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    
-	
+
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
-		
+
+#ifdef STM32H750xx
+		/*PC4 液晶SPI C/D  */
+		GPIO_InitStruct.Pin = GPIO_PIN_12;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+		HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+#else
 		/*PC4 液晶SPI C/D  */
 		/*PC13 液晶SPI RST  */
 		GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_4;
@@ -104,6 +140,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 		GPIO_InitStruct.Pull = GPIO_PULLUP;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+#endif
 	}
   
 }
@@ -117,7 +154,11 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
 
 void MX_SPI1_Init(void)
 {
+#ifdef STM32H750xx
+	LCD_SPI.Instance 									= SPI6;							   				//	使用SPI6
+#else
 	LCD_SPI.Instance 									= SPI1;							   				//	使用SPI1
+#endif
 	LCD_SPI.Init.Mode 								= SPI_MODE_MASTER;            //	主机模式
 	LCD_SPI.Init.Direction 						= SPI_DIRECTION_1LINE;        //	单线
 	LCD_SPI.Init.DataSize 						= SPI_DATASIZE_8BIT;        	//	8位数据宽度

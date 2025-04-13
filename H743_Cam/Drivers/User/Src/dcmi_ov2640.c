@@ -33,7 +33,7 @@ void HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi)
    {
 		__HAL_RCC_DCMI_CLK_ENABLE();		// 使能 DCMI 外设时钟
 
-		__HAL_RCC_GPIOE_CLK_ENABLE();// 使能相应的GPIO时钟
+		__HAL_RCC_GPIOE_CLK_ENABLE();		// 使能相应的GPIO时钟
 		__HAL_RCC_GPIOD_CLK_ENABLE();
 		__HAL_RCC_GPIOB_CLK_ENABLE();
 		__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -41,8 +41,50 @@ void HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi)
 		
 		GPIO_OV2640_PWDN_CLK_ENABLE;    // 使能PWDN 引脚的 GPIO 时钟
 		
-	
+#ifdef STM32H750xx	
+/****************************************************************************  
+   数据引脚                       时钟和同步引脚
+    PC6     ------> DCMI_D0        PG9     ------> DCMI_VSYNC
+    PC7     ------> DCMI_D1	     	 PA4     ------> DCMI_HSYNC
+    PG10    ------> DCMI_D2        PA6  	 ------> DCMI_PIXCLK
+    PG11    ------> DCMI_D3	
+    PE4     ------> DCMI_D4	    SCCB 控制引脚，初始化在 sccb.c 文件
+    PD3     ------> DCMI_D5		  	PG2  ------> SCCB_SCL
+    PE5     ------> DCMI_D6	    	PG3  ------> SCCB_SDA 
+    PE6     ------> DCMI_D7
 
+   掉电控制引脚
+		PG7   	------> PWDN
+******************************************************************************/
+		GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6;
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+		GPIO_InitStruct.Alternate = GPIO_AF13_DCMI;
+		HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = GPIO_PIN_3;
+		HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_10;
+		HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_4;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // 初始化 PWDN 引脚  
+		//OV2640_PWDN_ON;	// 高电平，进入掉电模式，摄像头停止工作，此时功耗降到最低
+
+		GPIO_InitStruct.Pin 	= GPIO_PIN_7;					// PWDN 引脚
+		GPIO_InitStruct.Mode 	= GPIO_MODE_OUTPUT_PP;		// 推挽输出模式
+		GPIO_InitStruct.Pull 	= GPIO_PULLUP;						// 上拉
+		GPIO_InitStruct.Speed 	= GPIO_SPEED_FREQ_LOW;	// 速度等级低
+		HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);	   			// 初始化  
+
+#else
 /****************************************************************************  
    数据引脚                       时钟和同步引脚
     PC6     ------> DCMI_D0        PB7     ------> DCMI_VSYNC
@@ -108,7 +150,7 @@ void HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi)
 		GPIO_InitStruct.Pull = GPIO_PULLUP;
 		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 		HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-		
+#endif	
 		DCMI_RST_L;
 		OV2640_PWDN_ON;
 	}

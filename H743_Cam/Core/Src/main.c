@@ -23,7 +23,8 @@
 
 #include "lcd_169_drv.h"
 #include "dcmi_ov2640.h"
-#include "ei_logging.h"
+//#include "ei_logging.h"
+#include "sdram.h"
 
 #define ROUT_STACK_SIZE			( (uint16_t) 200 )
 #define EI_STACK_SIZE				( (uint16_t) 300 )
@@ -34,9 +35,16 @@ osThreadId_t	tskId_Routine, tskId_Ei;
 uint8_t bDmaBufA = TRUE, bEiFlag = FALSE;
 
 
+uint16_t	Camera_BufferA[Display_Width*Display_Height];
+uint16_t	Camera_BufferB[Display_Width*Display_Height];
+uint16_t	Camera_BufferC[Display_Width*Display_Height];
+
+SDRAM_HandleTypeDef hsdram1;
+
 /********************************************** 函数声明 *******************************************/
 void SystemClock_Config(void);		// 时钟初始化
 void MPU_Config(void);					// MPU配置
+void MX_FMC_Init(void);
 extern void ei_edge_impulse();
 
 //-----------液晶背光控制脚配置------------------------------
@@ -44,10 +52,19 @@ static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   
+#ifdef STM32H750xx
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  /*Configure GPIO pin : PH6 背景光控制*/
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);	
+  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_6, GPIO_PIN_SET);   //打开液晶背光
+#else
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   /*Configure GPIO pin : PA7 背景光控制*/
   GPIO_InitStruct.Pin = GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -55,7 +72,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);	
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);   //打开液晶背光
-	
+
 	/*Configure GPIO pin : PE12 补光LED控制*/
 	GPIO_InitStruct.Pin = GPIO_PIN_12;                   
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -64,6 +81,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
 	//HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, GPIO_PIN_SET);   //补光LED
+#endif
 }
 
 void Routine( void *arg )
@@ -71,7 +89,7 @@ void Routine( void *arg )
  	SPI_LCD_Init();      	// 液晶屏以及SPI初始化 
  	LCD_DisplayString(10, 130, "Waiting Please...");
 	DCMI_OV2640_Init();   			 	// DCMI以及OV2640初始化
-	OV2640_DMA_Transmit_Continuous(Camera_BufferA, OV2640_BufferSize);  // 启动DMA连续传输
+	OV2640_DMA_Transmit_Continuous((uint32_t)Camera_BufferA, OV2640_BufferSize);  // 启动DMA连续传输
 //	OV2640_DMA_Transmit_Snapshot(bDmaBufA ? Camera_BufferA : Camera_BufferB, OV2640_BufferSize);
 
 	while (1)
@@ -133,15 +151,20 @@ int main(void)
 
 	LED_Init();					  // 初始化LED引脚 (PE3)
 	USART1_Init();				// USART1初始化	(PA9, PA10)
-	MX_GPIO_Init();       //液晶背光和摄像头补光LED控制 (PA7, PE12)
+	MX_GPIO_Init();       // 液晶背光和摄像头补光LED控制 (PA7, PE12)
+#ifdef STM32H750xx
+	MX_FMC_Init();
+	SDRAM_Initialization_Sequence(&hsdram1);	// 配置SDRAM相关时序和控制方式
+	uint8_t rc = SDRAM_Test();
+#endif
 
 	if (osKernelInitialize() != osOK)
 	{
-		EI_LOGE("osKernelInitialize error!!!\r\n");
+//		EI_LOGE("osKernelInitialize error!!!\r\n");
 		return -1;
 	}
 
-	EI_LOGI("osThreadNew\r\n");
+//	EI_LOGI("osThreadNew\r\n");
 
 	memset(&osAttr, 0, sizeof(osAttr));
 	osAttr.name = tskRoutName;
@@ -154,7 +177,7 @@ int main(void)
 	osAttr.stack_size = EI_STACK_SIZE;
 	tskId_Ei = osThreadNew( EI_Proc, NULL, &osAttr );
 
-	EI_LOGI("osKernelStart\r\n");
+//	EI_LOGI("osKernelStart\r\n");
 	osKernelStart();
 	
   /* Infinite loop */
@@ -210,12 +233,17 @@ void SystemClock_Config(void)
 	RCC_OscInitStruct.CSIState = RCC_CSI_OFF;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+#ifdef STM32H750xx
+  RCC_OscInitStruct.PLL.PLLM = 5;		// 25MHz/5 * 192 /2
+  RCC_OscInitStruct.PLL.PLLN = 192;
+#else
   RCC_OscInitStruct.PLL.PLLM = 4;		// 24MHz/4 * 160 /2
   RCC_OscInitStruct.PLL.PLLN = 160;
+#endif
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
-  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
+  RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_2;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -269,7 +297,62 @@ void MPU_Config(void)
 	HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);	// 使能MPU
 }
 
+#ifdef STM32H750xx
+void MX_FMC_Init(void)
+{
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOI_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
+  /* USER CODE BEGIN FMC_Init 0 */
+
+  /* USER CODE END FMC_Init 0 */
+
+  FMC_SDRAM_TimingTypeDef SdramTiming = {0};
+
+  /* USER CODE BEGIN FMC_Init 1 */
+
+  /* USER CODE END FMC_Init 1 */
+
+  /** Perform the SDRAM1 memory initialization sequence
+  */
+  hsdram1.Instance = FMC_SDRAM_DEVICE;
+  /* hsdram1.Init */
+  hsdram1.Init.SDBank = FMC_SDRAM_BANK1;
+  hsdram1.Init.ColumnBitsNumber = FMC_SDRAM_COLUMN_BITS_NUM_8;
+  hsdram1.Init.RowBitsNumber = FMC_SDRAM_ROW_BITS_NUM_12;
+  hsdram1.Init.MemoryDataWidth = FMC_SDRAM_MEM_BUS_WIDTH_32;
+  hsdram1.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
+  hsdram1.Init.CASLatency = FMC_SDRAM_CAS_LATENCY_3;
+  hsdram1.Init.WriteProtection = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
+  hsdram1.Init.SDClockPeriod = FMC_SDRAM_CLOCK_PERIOD_2;
+  hsdram1.Init.ReadBurst = FMC_SDRAM_RBURST_ENABLE;
+  hsdram1.Init.ReadPipeDelay = FMC_SDRAM_RPIPE_DELAY_0;
+  /* SdramTiming */
+  SdramTiming.LoadToActiveDelay = 2;
+  SdramTiming.ExitSelfRefreshDelay = 7;
+  SdramTiming.SelfRefreshTime = 4;
+  SdramTiming.RowCycleDelay = 7;
+  SdramTiming.WriteRecoveryTime = 3;
+  SdramTiming.RPDelay = 2;
+  SdramTiming.RCDDelay = 2;
+
+  if (HAL_SDRAM_Init(&hsdram1, &SdramTiming) != HAL_OK)
+  {
+    Error_Handler( );
+  }
+
+  /* USER CODE BEGIN FMC_Init 2 */
+
+  /* USER CODE END FMC_Init 2 */
+}
+#endif
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None

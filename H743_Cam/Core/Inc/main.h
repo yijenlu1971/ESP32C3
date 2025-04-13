@@ -14,9 +14,9 @@
 
 EXT UART_HandleTypeDef huart1;  // UART_HandleTypeDef 结构体变量
 
-#define Camera_BufferA	0x24000000    // 摄像头图像缓冲区
-#define Camera_BufferB	0x24020000
-#define Camera_BufferC	0x24040000
+//#define Camera_BufferA	0x24000000    // 摄像头图像缓冲区
+//#define Camera_BufferB	0x24020000
+//#define Camera_BufferC	0x24040000
 
 #define LED_OFF 	  	HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_RESET)		// 输出低电平，点亮LED1	
 #define LED_ON 	  		HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_SET)			// 输出高电平，关闭LED1	
@@ -27,3 +27,4 @@ void LED_Init(void);
 void Error_Handler(void);
 
 extern uint8_t bDmaBufA;
+extern uint16_t	Camera_BufferA[], Camera_BufferB[], Camera_BufferC[];

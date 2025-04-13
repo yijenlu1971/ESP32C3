@@ -7,23 +7,23 @@
 
   <Targets>
     <Target>
-      <TargetName>STM32H743</TargetName>
+      <TargetName>STM32H750</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <pCCUsed>6210000::V6.21::ARMCLANG</pCCUsed>
       <uAC6>1</uAC6>
       <TargetOption>
         <TargetCommonOption>
-          <Device>STM32H743VITx</Device>
+          <Device>STM32H750XBHx</Device>
           <Vendor>STMicroelectronics</Vendor>
           <PackID>Keil.STM32H7xx_DFP.3.1.1</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
-          <Cpu>IRAM(0x20000000,0x00020000) IRAM2(0x24000000,0x00080000) IROM(0x08000000,0x00100000) IROM2(0x08100000,0x00100000) XRAM(0x30000000,0x00048000) XRAM2(0x38000000,0x00010000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
+          <Cpu>IRAM(0x20000000,0x00020000) IRAM2(0x24000000,0x00080000) IROM(0x08000000,0x00020000) XRAM(0x30000000,0x00048000) XRAM2(0x38000000,0x00010000) CPUTYPE("Cortex-M7") FPU3(DFPU) CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC8000 -FN1 -FF0STM32H7x_2048 -FS08000000 -FL0200000 -FP0($$Device:STM32H743VITx$CMSIS\Flash\STM32H7x_2048.FLM))</FlashDriverDll>
+          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC8000 -FN1 -FF0STM32H7x_128k -FS08000000 -FL020000 -FP0($$Device:STM32H750XBHx$CMSIS\Flash\STM32H7x_128k.FLM))</FlashDriverDll>
           <DeviceId>0</DeviceId>
-          <RegisterFile>$$Device:STM32H743VITx$Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h7xx.h</RegisterFile>
+          <RegisterFile>$$Device:STM32H750XBHx$Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h7xx.h</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -33,7 +33,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:STM32H743VITx$CMSIS\SVD\STM32H743.svd</SFDFile>
+          <SFDFile>$$Device:STM32H750XBHx$CMSIS\SVD\STM32H750.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -49,7 +49,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>STM32H743\</OutputDirectory>
-          <OutputName>STM32H743</OutputName>
+          <OutputName>STM32H750</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
@@ -138,7 +138,7 @@
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -188,7 +188,7 @@
             <RvdsCdeCp>0</RvdsCdeCp>
             <nBranchProt>0</nBranchProt>
             <hadIRAM2>1</hadIRAM2>
-            <hadIROM2>1</hadIROM2>
+            <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
             <useUlib>0</useUlib>
             <EndSel>0</EndSel>
@@ -207,7 +207,7 @@
             <Ro2Chk>0</Ro2Chk>
             <Ro3Chk>0</Ro3Chk>
             <Ir1Chk>1</Ir1Chk>
-            <Ir2Chk>1</Ir2Chk>
+            <Ir2Chk>0</Ir2Chk>
             <Ra1Chk>0</Ra1Chk>
             <Ra2Chk>0</Ra2Chk>
             <Ra3Chk>0</Ra3Chk>
@@ -252,7 +252,7 @@
               <IROM>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <Size>0x20000</Size>
               </IROM>
               <XRAM>
                 <Type>1</Type>
@@ -277,20 +277,20 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <Size>0x20000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
-                <StartAddress>0x8100000</StartAddress>
-                <Size>0x100000</Size>
+                <StartAddress>0x0</StartAddress>
+                <Size>0x0</Size>
               </OCR_RVCT5>
               <OCR_RVCT6>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x30000000</StartAddress>
                 <Size>0x48000</Size>
               </OCR_RVCT6>
               <OCR_RVCT7>
-                <Type>1</Type>
+                <Type>0</Type>
                 <StartAddress>0x38000000</StartAddress>
                 <Size>0x10000</Size>
               </OCR_RVCT7>
@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>2</Optim>
+            <Optim>4</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -338,7 +338,7 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER, STM32H743xx, EI_PORTING_OPEN_CMSIS</Define>
+              <Define>USE_HAL_DRIVER, STM32H750xx, EI_PORTING_OPEN_CMSIS</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\Drivers\User\Inc</IncludePath>
             </VariousControls>
@@ -443,6 +443,11 @@
               <FileName>ei_porting.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Drivers\User\Src\ei_porting.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sdram.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\User\Src\sdram.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -599,6 +604,16 @@
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32h7xx_hal_sdram.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_hal_sdram.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32h7xx_ll_fmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32H7xx_HAL_Driver\Src\stm32h7xx_ll_fmc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -609,9 +624,6 @@
         </Group>
         <Group>
           <GroupName>::Device</GroupName>
-        </Group>
-        <Group>
-          <GroupName>::EdgeImpulse</GroupName>
         </Group>
         <Group>
           <GroupName>::RTOS</GroupName>
@@ -625,7 +637,7 @@
       <api Capiversion="2.3.0" Cclass="CMSIS" Cgroup="RTOS2" exclusive="1">
         <package name="CMSIS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="6.0.0"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </api>
     </apis>
@@ -633,97 +645,85 @@
       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="6.0.0" condition="ARMv6_7_8-M Device">
         <package name="CMSIS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="6.0.0"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cclass="CMSIS" Cgroup="DSP" Cvariant="Source" Cvendor="ARM" Cversion="1.15.0" condition="CMSISCORE">
         <package name="CMSIS-DSP" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="1.15.0"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cclass="CMSIS" Cgroup="NN Lib" Cvendor="ARM" Cversion="4.1.0" condition="CMSIS-NN">
         <package name="CMSIS-NN" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="4.1.0"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Capiversion="2.1.3" Cclass="CMSIS" Cgroup="RTOS2" Csub="FreeRTOS" Cvariant="Cortex-M" Cvendor="ARM" Cversion="10.5.1" condition="CMSIS RTOS2 FreeRTOS CortexM">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Config" Cvariant="CMSIS RTOS2" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Config CMSIS RTOS2">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Core" Cvariant="Cortex-M" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Core CM">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Coroutines" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Coroutines">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Event Groups" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Event Groups">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Heap" Cvariant="Heap_4" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Heap">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Timers" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Timers">
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
-        </targetInfos>
-      </component>
-      <component Cclass="EdgeImpulse" Cgroup="SDK" Cvendor="EdgeImpulse" Cversion="1.71.6" condition="CMSIS packages">
-        <package name="EI-SDK" schemaVersion="1.7.7" url="" vendor="EdgeImpulse" version="1.71.6"/>
-        <targetInfos>
-          <targetInfo name="STM32H743"/>
-        </targetInfos>
-      </component>
-      <component Cclass="EdgeImpulse" Cgroup="model" Csub="STM32H7" Cvendor="EdgeImpulse" Cversion="3.0.0" condition="CMSIS packages">
-        <package name="STM32H7" schemaVersion="1.7.7" url="" vendor="EdgeImpulse" version="3.0.0"/>
-        <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="I/O" Csub="STDERR" Cvariant="Breakpoint" Cvendor="Keil" Cversion="1.2.0" condition="ARMCC Cortex-M">
         <package name="ARM_Compiler" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="1.7.2"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="I/O" Csub="STDIN" Cvariant="Breakpoint" Cvendor="Keil" Cversion="1.2.0" condition="ARMCC Cortex-M">
         <package name="ARM_Compiler" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="1.7.2"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cbundle="ARM Compiler" Cclass="Compiler" Cgroup="I/O" Csub="STDOUT" Cvariant="Breakpoint" Cvendor="Keil" Cversion="1.2.0" condition="ARMCC Cortex-M">
         <package name="ARM_Compiler" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="1.7.2"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
       <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.11.0" condition="STM32H7 CMSIS">
         <package name="STM32H7xx_DFP" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="3.1.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </component>
     </components>
@@ -741,39 +741,39 @@
         <targetInfos/>
       </file>
       <file attr="config" category="source" condition="STM32H743_ARMCC" name="Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\arm\startup_stm32h743xx.s" version="1.11.0">
-        <instance index="0">RTE\Device\STM32H743VITx\startup_stm32h743xx.s</instance>
+        <instance index="0" removed="1">RTE\Device\STM32H743VITx\startup_stm32h743xx.s</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.11.0" condition="STM32H7 CMSIS"/>
         <package name="STM32H7xx_DFP" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="3.1.1"/>
-        <targetInfos>
-          <targetInfo name="STM32H743"/>
-        </targetInfos>
+        <targetInfos/>
       </file>
       <file attr="config" category="source" condition="STM32H7_SC" name="Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\system_stm32h7xx.c" version="1.11.0">
-        <instance index="0">RTE\Device\STM32H743VITx\system_stm32h7xx.c</instance>
+        <instance index="0" removed="1">RTE\Device\STM32H743VITx\system_stm32h7xx.c</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.11.0" condition="STM32H7 CMSIS"/>
         <package name="STM32H7xx_DFP" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="3.1.1"/>
-        <targetInfos>
-          <targetInfo name="STM32H743"/>
-        </targetInfos>
+        <targetInfos/>
       </file>
       <file attr="config" category="source" condition="STM32H750_ARMCC" name="Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\arm\startup_stm32h750xx.s" version="1.11.0">
-        <instance index="0" removed="1">RTE\Device\STM32H750XBHx\startup_stm32h750xx.s</instance>
+        <instance index="0">RTE\Device\STM32H750XBHx\startup_stm32h750xx.s</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.11.0" condition="STM32H7 CMSIS"/>
         <package name="STM32H7xx_DFP" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="3.1.1"/>
-        <targetInfos/>
+        <targetInfos>
+          <targetInfo name="STM32H750"/>
+        </targetInfos>
       </file>
       <file attr="config" category="source" condition="STM32H7_SC" name="Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\system_stm32h7xx.c" version="1.11.0">
-        <instance index="0" removed="1">RTE\Device\STM32H750XBHx\system_stm32h7xx.c</instance>
+        <instance index="0">RTE\Device\STM32H750XBHx\system_stm32h7xx.c</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.11.0" condition="STM32H7 CMSIS"/>
         <package name="STM32H7xx_DFP" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="Keil" version="3.1.1"/>
-        <targetInfos/>
+        <targetInfos>
+          <targetInfo name="STM32H750"/>
+        </targetInfos>
       </file>
       <file attr="config" category="header" condition="CoreM" name="CMSIS\RTOS2\FreeRTOS\Config\ARMCM\FreeRTOSConfig.h" version="10.4.0">
         <instance index="0">RTE\RTOS\FreeRTOSConfig.h</instance>
         <component Cbundle="FreeRTOS" Cclass="RTOS" Cgroup="Config" Cvariant="CMSIS RTOS2" Cvendor="ARM" Cversion="10.5.1" condition="FreeRTOS Config CMSIS RTOS2"/>
         <package name="CMSIS-FreeRTOS" schemaVersion="1.7.7" url="https://www.keil.com/pack/" vendor="ARM" version="10.5.1"/>
         <targetInfos>
-          <targetInfo name="STM32H743"/>
+          <targetInfo name="STM32H750"/>
         </targetInfos>
       </file>
       <file attr="config" category="source" name="CMSIS\RTOS2\FreeRTOS\Config\FreeRTOS_Tick_Config.c" version="9.0.0">

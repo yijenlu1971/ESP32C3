@@ -8,6 +8,15 @@
 
 /*----------------------------------------- IIIC 引脚配置宏 -----------------------------------------------*/
 
+#ifdef STM32H750xx
+#define SCCB_SCL_CLK_ENABLE    __HAL_RCC_GPIOG_CLK_ENABLE()		// SCL 引脚时钟
+#define SCCB_SCL_PORT   		   GPIOG                 				// SCL 引脚端口
+#define SCCB_SCL_PIN     		   GPIO_PIN_2 								// SCL 引脚
+        
+#define SCCB_SDA_CLK_ENABLE    __HAL_RCC_GPIOG_CLK_ENABLE() 	// SDA 引脚时钟
+#define SCCB_SDA_PORT   			 GPIOG                   			// SDA 引脚端口
+#define SCCB_SDA_PIN    			 GPIO_PIN_3              			// SDA 引脚
+#else
 #define SCCB_SCL_CLK_ENABLE       __HAL_RCC_GPIOB_CLK_ENABLE()		// SCL 引脚时钟
 #define SCCB_SCL_PORT   		   GPIOB                 				// SCL 引脚端口
 #define SCCB_SCL_PIN     		   GPIO_PIN_6 								// SCL 引脚
@@ -15,6 +24,7 @@
 #define SCCB_SDA_CLK_ENABLE       __HAL_RCC_GPIOB_CLK_ENABLE() 	// SDA 引脚时钟
 #define SCCB_SDA_PORT   			 GPIOB                   			// SDA 引脚端口
 #define SCCB_SDA_PIN    			 GPIO_PIN_9              			// SDA 引脚
+#endif
 
 /*------------------------------------------ IIC相关定义 -------------------------------------------------*/
 

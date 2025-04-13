@@ -89,9 +89,21 @@ void     OV2640_Set_Effect(uint8_t effect_Mode );					// ÓÃÓÚÉèÖÃÌØÐ§£¬Õý³£¡¢¸ºÆ
 
 /*-------------------------------------------------------------- Òý½ÅÅäÖÃºê ---------------------------------------------*/
 
+#ifdef STM32H750xx
+#define OV2640_PWDN_PIN            			 GPIO_PIN_7	        				 	// PWDN Òý½Å      
+#define OV2640_PWDN_PORT           			 GPIOG                 			 	// PWDN GPIO¶Ë¿Ú     
+#define GPIO_OV2640_PWDN_CLK_ENABLE    	__HAL_RCC_GPIOG_CLK_ENABLE() 		// PWDN GPIO¶Ë¿ÚÊ±ÖÓ
+
+#define DCMI_RST_H
+#define DCMI_RST_L
+#else
 #define OV2640_PWDN_PIN            			 GPIO_PIN_10        				 	// PWDN Òý½Å      
 #define OV2640_PWDN_PORT           			 GPIOD                 			 	// PWDN GPIO¶Ë¿Ú     
 #define GPIO_OV2640_PWDN_CLK_ENABLE    	__HAL_RCC_GPIOD_CLK_ENABLE() 		// PWDN GPIO¶Ë¿ÚÊ±ÖÓ
+
+#define DCMI_RST_H   GPIOE->ODR |= GPIO_PIN_13;
+#define DCMI_RST_L   GPIOE->ODR &= ~GPIO_PIN_13;
+#endif
 
 // µÍµçÆ½£¬²»¿ªÆôµôµçÄ£Ê½£¬ÉãÏñÍ·Õý³£¹¤×÷
 #define	OV2640_PWDN_OFF	HAL_GPIO_WritePin(OV2640_PWDN_PORT, OV2640_PWDN_PIN, GPIO_PIN_RESET)	
@@ -99,8 +111,6 @@ void     OV2640_Set_Effect(uint8_t effect_Mode );					// ÓÃÓÚÉèÖÃÌØÐ§£¬Õý³£¡¢¸ºÆ
 // ¸ßµçÆ½£¬½øÈëµôµçÄ£Ê½£¬ÉãÏñÍ·Í£Ö¹¹¤×÷£¬´ËÊ±¹¦ºÄ½µµ½×îµÍ
 #define 	OV2640_PWDN_ON		HAL_GPIO_WritePin(OV2640_PWDN_PORT, OV2640_PWDN_PIN, GPIO_PIN_SET)	
   
- #define DCMI_RST_H   GPIOE->ODR |= GPIO_PIN_13;
-#define DCMI_RST_L   GPIOE->ODR &= ~GPIO_PIN_13;
  
 #endif //__DCMI_OV2640_H
 

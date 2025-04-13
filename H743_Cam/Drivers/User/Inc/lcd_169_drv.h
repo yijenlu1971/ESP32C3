@@ -7,14 +7,16 @@
 #include "lcd_fonts.h"	
 
 
+#define LCD_CSH   GPIOA->ODR |= GPIO_PIN_15;			// SPI CS
+#define LCD_CSL   GPIOA->ODR &= ~GPIO_PIN_15;			// SPI CS
 
-
-
-#define LCD_CSH   GPIOA->ODR |= GPIO_PIN_15;
-#define LCD_CSL   GPIOA->ODR &= ~GPIO_PIN_15;
-
+#ifdef STM32H750xx
+#define LCD_RST_H
+#define LCD_RST_L
+#else
 #define LCD_RST_H   GPIOC->ODR |= GPIO_PIN_13;
 #define LCD_RST_L   GPIOC->ODR &= ~GPIO_PIN_13;
+#endif
 
 /*-------宏定义 -------------------------------------------*/
 
@@ -112,13 +114,20 @@ void	LCD_CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,uint16
 /*--------------------------------------------- LCD其它引脚 -----------------------------------------------*/
 
 
+#ifdef STM32H750xx
+#define		LCD_Bkglight_OFF	HAL_GPIO_WritePin(GPIOH, GPIO_PIN_6, GPIO_PIN_RESET);	// 低电平，关闭背光
+#define 	LCD_Bkglight_ON		HAL_GPIO_WritePin(GPIOH, GPIO_PIN_6, GPIO_PIN_SET);		  // 高电平，开启背光
 
+#define		TFT_DC_C		   HAL_GPIO_WritePin(GPIOG, GPIO_PIN_12, GPIO_PIN_RESET);	   // 低电平，指令传输 
+#define 	TFT_DC_D		   HAL_GPIO_WritePin(GPIOG, GPIO_PIN_12, GPIO_PIN_SET);			 // 高电平，数据传输
+
+#else
 #define		LCD_Bkglight_OFF		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);	// 低电平，关闭背光
 #define 	LCD_Bkglight_ON		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET);		  // 高电平，开启背光
  
-
 #define		TFT_DC_C		   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);	   // 低电平，指令传输 
 #define 	TFT_DC_D		   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);			 // 高电平，数据传输
+#endif
 
 #endif 
 
