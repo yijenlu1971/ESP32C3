@@ -55,8 +55,8 @@
 
 //  <o>Total heap size [bytes] <0-0xFFFFFFFF>
 //  <i> Heap memory size in bytes.
-//  <i> Default: 8192
-#define configTOTAL_HEAP_SIZE                   ((size_t)0x1A000)
+//  <i> Default: 196k
+#define configTOTAL_HEAP_SIZE                   ((size_t)0x30000)
 
 //  <o>Kernel tick frequency [Hz] <0-0xFFFFFFFF>
 //  <i> Kernel tick rate in Hz.
@@ -245,6 +245,7 @@
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
 #define configMAX_PRIORITIES                    56
 #define configKERNEL_INTERRUPT_PRIORITY         255
+//#define configAPPLICATION_ALLOCATED_HEAP				1
 
 /* Defines that include FreeRTOS functions which implement CMSIS RTOS2 API. Do not change! */
 #define INCLUDE_xEventGroupSetBitsFromISR       1

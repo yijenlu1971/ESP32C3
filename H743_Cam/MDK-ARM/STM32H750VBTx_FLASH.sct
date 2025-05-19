@@ -1,0 +1,61 @@
+; *************************************************************
+; *** Scatter-Loading Description File for STM32H750VBTx ***
+; *************************************************************
+; Original linker script converted to ARM scatter format
+; STM32H750VBTx with:
+; - 128KB FLASH (mapped at 0x90000000, extended to 8192KB)
+; - 128KB DTCM RAM
+; - 512KB D1 RAM
+; - 288KB D2 RAM
+; - 64KB D3 RAM
+; - 64KB ITCM RAM
+
+; Memory regions definitions
+LR_FLASH 0x90000000 0x800000 {   ; 8192KB FLASH memory
+    ER_VECTOR 0x90000000 0x400 {  ; Vector table
+        *(RESET, +FIRST)
+    }
+    
+    ER_CODE +0 {                  ; Code & constant data
+        *(+RO)
+    }
+    
+    RW_DATA 0x24000000 0x80000 {  ; RAM_D1: 512KB
+        *(+RW, +ZI)
+        .ANY(+RW +ZI)
+    }
+    
+    ; Define heap & stack in RAM_D1
+    ARM_LIB_HEAP +0 EMPTY 0x200 {  ; Min heap size = 0x200
+    }
+    
+    ARM_LIB_STACK 0x24080000 EMPTY -0x400 {  ; Min stack size = 0x400
+        ; Stack grows downward from the end of RAM_D1 
+    }
+    
+    ; Other RAM regions can be used if needed
+    ; DTCM RAM region
+    RW_DTCMRAM 0x20000000 0x20000 {  ; 128KB
+        ; *dtcm.o(+RW +ZI)
+    }
+    
+    ; RAM_D2 region
+    RW_RAM_D2 0x30000000 0x48000 {  ; 288KB
+        ; *ramd2.o(+RW +ZI)
+        *(.ramd2)
+    }
+    
+    ; RAM_D3 region
+    RW_RAM_D3 0x38000000 0x10000 {  ; 64KB
+        ; *ramd3.o(+RW +ZI)
+    }
+    
+    ; ITCM RAM region
+    RW_ITCMRAM 0x00000000 0x10000 {  ; 64KB
+        ; *itcm.o(+RW +ZI)
+    }
+
+	RW_EX_SRAM 0xC0000000 0x01000000 { 	; 16MB
+        *.o (.exsram)
+	}
+}

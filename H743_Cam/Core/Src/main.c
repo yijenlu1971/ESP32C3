@@ -20,10 +20,10 @@
 #define GLOBALS
 #include "main.h"
 #include "cmsis_os2.h"
-
+#include "FreeRTOSConfig.h"
 #include "lcd_169_drv.h"
 #include "dcmi_ov2640.h"
-//#include "ei_logging.h"
+#include "ei_logging.h"
 #include "sdram.h"
 
 #define ROUT_STACK_SIZE			( (uint16_t) 200 )
@@ -37,9 +37,14 @@ uint8_t bDmaBufA = TRUE, bEiFlag = FALSE;
 
 uint16_t	Camera_BufferA[Display_Width*Display_Height];
 uint16_t	Camera_BufferB[Display_Width*Display_Height];
-uint16_t	Camera_BufferC[Display_Width*Display_Height];
+__attribute__((section(".ramd2"))) uint16_t	Camera_BufferC[Display_Width*Display_Height*3/2];
+//uint16_t	*Camera_BufferA = (uint16_t *)0xC0000000;
+//uint16_t	*Camera_BufferB = (uint16_t *)ADDR_CamBufB;
+//uint16_t	*Camera_BufferC = (uint16_t *)ADDR_CamBufC;
+//__attribute__((section(".exsram"))) volatile uint8_t myTest[128];
 
 SDRAM_HandleTypeDef hsdram1;
+UART_HandleTypeDef huart1;
 
 /********************************************** 函数声明 *******************************************/
 void SystemClock_Config(void);		// 时钟初始化
@@ -138,6 +143,15 @@ int main(void)
 	volatile uint32_t	clk;
 	osThreadAttr_t	osAttr;
 
+	for(uint8_t i = 0; i < 8; i++)
+	{
+		NVIC->ICER[i] = 0xFFFFFFFF;
+		NVIC->ICPR[i] = 0xFFFFFFFF;
+	}
+	SCB->VTOR = QSPI_BASE;
+	__enable_irq();
+	__set_PRIMASK(0);
+
 //	MPU_Config();				  // MPU配置   用于配置内存保护单元 0x24000000开始的内存
 	SCB_EnableICache();		// 使能ICache  通过启用指令缓存来加速程序执行和减少内存访问延迟
 	SCB_EnableDCache();		// 使能DCache  通过启用数据缓存来加速数据访问和减少内存带宽消耗
@@ -155,16 +169,17 @@ int main(void)
 #ifdef STM32H750xx
 	MX_FMC_Init();
 	SDRAM_Initialization_Sequence(&hsdram1);	// 配置SDRAM相关时序和控制方式
-	uint8_t rc = SDRAM_Test();
+//	uint8_t rc = SDRAM_Test();
+//	myTest[0] = 0x01;
 #endif
 
 	if (osKernelInitialize() != osOK)
 	{
-//		EI_LOGE("osKernelInitialize error!!!\r\n");
+		EI_LOGE("osKernelInitialize error!!!\r\n");
 		return -1;
 	}
 
-//	EI_LOGI("osThreadNew\r\n");
+	EI_LOGI("osThreadNew\r\n");
 
 	memset(&osAttr, 0, sizeof(osAttr));
 	osAttr.name = tskRoutName;
@@ -177,7 +192,7 @@ int main(void)
 	osAttr.stack_size = EI_STACK_SIZE;
 	tskId_Ei = osThreadNew( EI_Proc, NULL, &osAttr );
 
-//	EI_LOGI("osKernelStart\r\n");
+	EI_LOGI("osKernelStart\r\n");
 	osKernelStart();
 	
   /* Infinite loop */
@@ -352,6 +367,56 @@ void MX_FMC_Init(void)
 
   /* USER CODE END FMC_Init 2 */
 }
+
+void ExSRAM_Init(void)
+{
+	__IO uint32_t tmpmrd = 0;
+	FMC_SDRAM_CommandTypeDef *Command;
+
+	MX_FMC_Init();
+
+	/* Configure a clock configuration enable command */
+	Command->CommandMode 					= FMC_SDRAM_CMD_CLK_ENABLE;	// 开启SDRAM时钟 
+	Command->CommandTarget 				= FMC_COMMAND_TARGET_BANK; 	// 选择要控制的区域
+	Command->AutoRefreshNumber 		= 1;
+	Command->ModeRegisterDefinition 	= 0;
+
+	HAL_SDRAM_SendCommand(&hsdram1, Command, SDRAM_TIMEOUT);	// 发送控制指令
+	for(volatile int delay = 0; delay < 2000; delay++){}
+
+	/* Configure a PALL (precharge all) command */ 
+	Command->CommandMode 					= FMC_SDRAM_CMD_PALL;		// 预充电命令
+	Command->CommandTarget 				= FMC_COMMAND_TARGET_BANK;	// 选择要控制的区域
+	Command->AutoRefreshNumber 		= 1;
+	Command->ModeRegisterDefinition 	= 0;
+
+	HAL_SDRAM_SendCommand(&hsdram1, Command, SDRAM_TIMEOUT);  // 发送控制指令
+
+	/* Configure a Auto-Refresh command */ 
+	Command->CommandMode 					= FMC_SDRAM_CMD_AUTOREFRESH_MODE;	// 使用自动刷新
+	Command->CommandTarget 				= FMC_COMMAND_TARGET_BANK;          // 选择要控制的区域
+	Command->AutoRefreshNumber		= 8;                                // 自动刷新次数
+	Command->ModeRegisterDefinition 	= 0;
+
+	HAL_SDRAM_SendCommand(&hsdram1, Command, SDRAM_TIMEOUT);	// 发送控制指令
+
+	/* Program the external memory mode register */
+	tmpmrd = (uint32_t)SDRAM_MODEREG_BURST_LENGTH_1   |
+							SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL   |
+							SDRAM_MODEREG_CAS_LATENCY_3           |
+							SDRAM_MODEREG_OPERATING_MODE_STANDARD |
+							SDRAM_MODEREG_WRITEBURST_MODE_SINGLE;
+
+	Command->CommandMode					= FMC_SDRAM_CMD_LOAD_MODE;	// 加载模式寄存器命令
+	Command->CommandTarget 				= FMC_COMMAND_TARGET_BANK;	// 选择要控制的区域
+	Command->AutoRefreshNumber 		= 1;
+	Command->ModeRegisterDefinition 	= tmpmrd;
+
+	HAL_SDRAM_SendCommand(&hsdram1, Command, SDRAM_TIMEOUT);	// 发送控制指令
+	
+	HAL_SDRAM_ProgramRefreshRate(&hsdram1, 1543);  // 配置刷新率
+}
+
 #endif
 /**
   * @brief  This function is executed in case of error occurrence.

@@ -21,7 +21,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32h7xx_it.h"
+#ifndef __BOOT__
 #include "dcmi_ov2640.h"
+#endif
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -165,7 +167,7 @@ void DebugMon_Handler(void)
 
   /* USER CODE END DebugMonitor_IRQn 1 */
 }
-#if 0
+#ifdef __BOOT__
 /**
   * @brief This function handles Pendable request for system service.
   */
@@ -201,7 +203,7 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
-
+#ifndef __BOOT__
 extern	DCMI_HandleTypeDef hdcmi;
 extern	DMA_HandleTypeDef DMA_Handle_dcmi;
 
@@ -214,7 +216,7 @@ extern	DMA_HandleTypeDef DMA_Handle_dcmi;
 void DMA2_Stream7_IRQHandler(void)
 {
 	HAL_DMA_IRQHandler(&DMA_Handle_dcmi);
-	//__HAL_DMA_CLEAR_FLAG(&DMA_Handle_dcmi, DMA_FLAG_TCIF3_7);
+//	__HAL_DMA_CLEAR_FLAG(&DMA_Handle_dcmi, DMA_FLAG_TCIF3_7);
 
 	memcpy((uint32_t*)Camera_BufferB, (uint32_t*)Camera_BufferA, OV2640_BufferSize*4);
 //	bDmaBufA = !bDmaBufA;
@@ -234,6 +236,6 @@ void DCMI_IRQHandler(void)
 	
 //DCMI_ClearITPendingBit(DCMI_IT_FRAME);
 }
-
+#endif
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

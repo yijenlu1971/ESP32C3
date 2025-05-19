@@ -1,6 +1,10 @@
 #ifndef  __SDRAM_H
 #define	__SDRAM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "stm32h7xx_hal.h"
 #include "usart.h"
 
@@ -28,6 +32,9 @@ void SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram);	// ≈‰÷√SDRAMœ‡π
 
 uint8_t SDRAM_Test(void);	// SDRAM∂¡–¥≤‚ ‘
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif 
 

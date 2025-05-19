@@ -239,14 +239,13 @@ int8_t DCMI_OV2640_Init(void)
 	HAL_Delay(40);    
 	SCCB_GPIO_Config();		               // SCCB引脚初始化
 	HAL_Delay(20);    
-	
 
 	//OV2640_Reset();	                     // 执行软件复位
 	Device_ID = OV2640_ReadID();		      // 读取器件ID
 	
 	if( (Device_ID == 0x2640) || (Device_ID == 0x2642) )		// 进行匹配，实际的器件ID可能是 0x2640 或者 0x2642
 	{
-		printf ("OV2640 OK,ID:0x%X\r\n",Device_ID);		      // 匹配通过
+//		printf ("OV2640 OK,ID:0x%X\r\n",Device_ID);		      // 匹配通过
 	
       OV2640_Config( OV2640_SVGA_Config );             		// 配置 SVGA模式  ------>  800*600，  最大帧率30帧
 //		OV2640_Config( OV2640_UXGA_Config );                  // 配置 UXGA模式  ------>  1600*1200，最大帧率15帧
@@ -260,9 +259,9 @@ int8_t DCMI_OV2640_Init(void)
 	}
 	else
 	{
-		printf ("OV2640 ERROR!!!!!  ID:%X\r\n",Device_ID);	   // 读取ID错误
+//		printf ("OV2640 ERROR!!!!!  ID:%X\r\n",Device_ID);	   // 读取ID错误
 		return  OV2640_Error;	 // 返回错误标志
-	}	
+	}
 }
 
 /***************************************************************************************************************************************

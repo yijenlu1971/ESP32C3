@@ -103,7 +103,7 @@ uint8_t SDRAM_Test(void)
 	float    ExecutionSpeed;			// 执行速度
 	
 	printf("\r\n*****************************************************************************************************\r\n");		
-	printf("\r\n进行速度测试>>>\r\n");
+	printf("\r\nTest speed>>>\r\n");
 
 // 写入 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 	
@@ -151,30 +151,30 @@ uint8_t SDRAM_Test(void)
 		ReadData = *(__IO uint32_t*)pSDRAM++;  // 从SDRAM读出数据	
 		if( ReadData != (uint32_t)i )      //检测数据，若不相等，跳出函数,返回检测失败结果。
 		{
-			printf("\r\nSDRAM测试失败！！出错位置：%d,读出数据：%d\r\n ",i,ReadData);
+			printf("\r\nFail to test SDRAM!!! Addr:%x, Data:%x\r\n ",i,ReadData);
 			return ERROR;	 // 返回失败标志
 		}
 	}
 
 	
-	printf("\r\n32位数据宽度读写通过，以8位数据宽度写入数据\r\n");
+	printf("\r\n32-bit RW pass, Write by 8-bit width\r\n");
 	for (i = 0; i < SDRAM_Size; i++)
 	{
  		*(__IO uint8_t*) (SDRAM_BANK_ADDR + i) =  (uint8_t)i;
 	}	
-	printf("写入完毕，读取数据并比较...\r\n");
+	printf("Write done, compare with read back...\r\n");
 	for (i = 0; i < SDRAM_Size; i++)
 	{
 		ReadData_8b = *(__IO uint8_t*) (SDRAM_BANK_ADDR + i);
 		if( ReadData_8b != (uint8_t)i )      //检测数据，若不相等，跳出函数,返回检测失败结果。
 		{
-			printf("8位数据宽度读写测试失败！！\r\n");
-			printf("请检查NBL0和NBL1的连接\r\n");	
+			printf("Fail to RW 8-bit!!!\r\n");
+			printf("Check NBL0 and NBL1\r\n");	
 			return ERROR;	 // 返回失败标志
 		}
 	}	
-	printf("8位数据宽度读写通过\r\n");
-	printf("SDRAM读写测试通过，系统正常\r\n");
+	printf("8-bit RW pass\r\n");
+	printf("SDRAM RW pass\r\n");
 	
 	
 	return SUCCESS;	 // 返回成功标志
