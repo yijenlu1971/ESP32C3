@@ -44,7 +44,7 @@ const char *ssid = "TP-Link";
 const char *password = "0976511xxx";
 const String  google_url = "https://speech.googleapis.com/v1/speech:recognize?key=AIzaSyAqz9vyAyGEQA1IQmq8rC27zMxqN9Wxxxx";
 const String  openai_url = "https://api.openai.com/v1/responses";
-const String  openai_api_key = "sk-proj-Fv1lJegzddhY0ldGJTshW_yKm-89po4LVeQ_azbKNqFqlDDKBHG410YaJL0oyXyiAHkqiyaIIaT3BlbkFJCFXiza6cqR_ypVeTo7mqI8QrkD56jWBHGoc7OIjOqlb9hkJrf0UIjKai0haeEnkjyKg-xxxxxx";
+const String  openai_api_key = "sk-proj-Fv1lJegzddhY0ldGJTshW_yKm-";
 
 // ===========================
 // for wave
