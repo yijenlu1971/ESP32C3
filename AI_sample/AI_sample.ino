@@ -115,7 +115,7 @@ void setup() {
   WiFi.setSleep(false);
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(250);
+    delay(50);
     Serial.print(".");
   }
   Serial.println("");
@@ -191,6 +191,11 @@ void SpeechToText_Json(uint8_t *audioBuffer, size_t audioSize)
     jsonPayload += "}";
     jsonPayload += "}";
   
+    while (WiFi.status() != WL_CONNECTED) {
+    delay(50);
+    Serial.print(".");
+  }
+
   client.setInsecure(); // 簡化憑證驗證（實務可接受）
   https.begin(client, url);
   https.addHeader("Content-Type", "application/json");
